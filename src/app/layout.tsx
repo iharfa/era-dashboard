@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "ERA Monitoring Dashboard",
-  description: "Role-based EIA monitoring dashboard seeded from ERA workbook data"
+  title: "ERA Data Portal",
+  description: "Role-based EIA data management portal for projects, permits, monitoring, inspections, and data quality"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

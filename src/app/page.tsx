@@ -42,7 +42,8 @@ type Tab = "management" | "workload" | "projects" | "monitoring" | "inspections"
 export default function Home() {
   const [data, setData] = useState<AppData>(seedData);
   const [ready, setReady] = useState(false);
-  const [activeTab, setActiveTab] = useState<Tab>("management");
+  const [activeTab, setActiveTab] = useState<Tab>("projects");
+  const [navOpen, setNavOpen] = useState(false);
   const [userId, setUserId] = useState(seedData.users.find((u) => u.name === "ERA Management")?.id || seedData.users[0]?.id || "");
   const [search, setSearch] = useState("");
   const [selectedProjectId, setSelectedProjectId] = useState(seedData.projects[0]?.id || "");
@@ -192,18 +193,79 @@ export default function Home() {
     setData(seedData);
   }
 
+  const navGroups: Array<{ group: string; items: Array<[Tab, string, string, number?]> }> = [
+    {
+      group: "Data",
+      items: [
+        ["projects", "Projects", "Application register", data.projects.length],
+        ["monitoring", "Monitoring", "Reports & Cat-4"],
+        ["inspections", "Inspections", "Site inspections"],
+        ["entry", "New record", "Add data"],
+        ["cleaning", "Data cleaning", "Quality issues", metrics.openIssues]
+      ]
+    },
+    {
+      group: "Insights",
+      items: [
+        ["management", "Overview", "Portfolio metrics"],
+        ["workload", "My workload", "Personal queue"]
+      ]
+    },
+    {
+      group: "System",
+      items: [["audit", "Audit trail", "Change history"]]
+    }
+  ];
+
+  const pageMeta: Record<Tab, { title: string; sub: string }> = {
+    projects: { title: "Projects", sub: "EIA application and review register" },
+    monitoring: { title: "Monitoring", sub: "Report submissions and Category 4 reviews" },
+    inspections: { title: "Inspections", sub: "Post-EIA site inspection records" },
+    entry: { title: "New record", sub: "Add projects, reports, inspections, and documents" },
+    cleaning: { title: "Data cleaning", sub: "Review and resolve data quality issues" },
+    management: { title: "Overview", sub: "Portfolio metrics and team workload" },
+    workload: { title: "My workload", sub: "Records and deadlines assigned to you" },
+    audit: { title: "Audit trail", sub: "Every import, correction, and update" }
+  };
+  const page = pageMeta[activeTab];
+
   return (
-    <main>
-      <header className="hero">
-        <div>
-          <p className="eyebrow">ERA internal monitoring system</p>
-          <h1>EIA assessment and monitoring dashboard</h1>
-          <p className="heroText">
-            Seeded from the uploaded workbook. The app tracks applications, permits, monitoring reports, inspections, workload, data quality, and audit history.
-          </p>
+    <div className={`app ${navOpen ? "navOpen" : ""}`}>
+      <aside className="sidebar">
+        <div className="brand">
+          <span className="brandMark">ERA</span>
+          <div className="brandText">
+            <strong>Data Portal</strong>
+            <small>EIA monitoring</small>
+          </div>
         </div>
-        <div className="loginCard">
-          <label>Demo login</label>
+
+        <nav className="nav" aria-label="Sections">
+          {navGroups.map((grp) => (
+            <div key={grp.group} className="navGroup">
+              <p className="navLabel">{grp.group}</p>
+              {grp.items.map(([id, label, desc, badge]) => (
+                <button
+                  key={id}
+                  className={`navItem ${activeTab === id ? "active" : ""}`}
+                  onClick={() => {
+                    setActiveTab(id);
+                    setNavOpen(false);
+                  }}
+                >
+                  <span className="navItemText">
+                    <span>{label}</span>
+                    <small>{desc}</small>
+                  </span>
+                  {badge ? <span className="navBadge">{badge.toLocaleString()}</span> : null}
+                </button>
+              ))}
+            </div>
+          ))}
+        </nav>
+
+        <div className="sideUser">
+          <label>Signed in as</label>
           <select value={userId} onChange={(event) => setUserId(event.target.value)}>
             {data.users.map((user) => (
               <option key={user.id} value={user.id}>
@@ -211,39 +273,33 @@ export default function Home() {
               </option>
             ))}
           </select>
-          <p>
-            Current role: <strong>{currentUser.role}</strong>
-          </p>
           <button className="ghost" onClick={resetDemoData}>
             Reset local edits
           </button>
         </div>
-      </header>
+      </aside>
 
-      <section className="metaStrip">
-        <span>Source: {data.meta.source_file}</span>
-        <span>Generated: {data.meta.generated_at}</span>
-        <span>{data.audit_trail.length.toLocaleString()} audit events</span>
-        <span>{metrics.openIssues.toLocaleString()} open data issues</span>
-      </section>
+      <div className="navScrim" onClick={() => setNavOpen(false)} aria-hidden />
 
-      <nav className="tabs" aria-label="Dashboard sections">
-        {[
-          ["management", "Management"],
-          ["workload", "My workload"],
-          ["projects", "Project register"],
-          ["monitoring", "Monitoring"],
-          ["inspections", "Inspections"],
-          ["cleaning", "Data cleaning"],
-          ["entry", "Data entry"],
-          ["audit", "Audit trail"]
-        ].map(([id, label]) => (
-          <button key={id} className={activeTab === id ? "active" : ""} onClick={() => setActiveTab(id as Tab)}>
-            {label}
+      <div className="content">
+        <header className="topbar">
+          <button className="iconBtn navToggle" aria-label="Toggle navigation" onClick={() => setNavOpen((v) => !v)}>
+            ☰
           </button>
-        ))}
-      </nav>
+          <div className="topbarTitle">
+            <h1>{page.title}</h1>
+            <p>{page.sub}</p>
+          </div>
+          {activeTab === "projects" && (
+            <input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search code, island, atoll, proponent, staff…" />
+          )}
+          <div className="topMeta">
+            <span className={`metaChip ${metrics.overdueReviews ? "warn" : ""}`}>{metrics.overdueReviews} overdue</span>
+            <span className={`metaChip ${metrics.openIssues ? "warn" : ""}`}>{metrics.openIssues} open issues</span>
+          </div>
+        </header>
 
+        <main className="pages">
       {activeTab === "management" && (
         <section className="section">
           <div className="grid kpiGrid">
@@ -319,13 +375,6 @@ export default function Home() {
 
       {activeTab === "projects" && (
         <section className="section">
-          <div className="sectionHeader">
-            <div>
-              <p className="eyebrow">Project register</p>
-              <h2>All projects are visible. Edits follow role assignment.</h2>
-            </div>
-            <input className="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search code, island, atoll, proponent, staff..." />
-          </div>
           <div className="grid split">
             <Panel title={`${filteredProjects.length} project records`} subtitle="Click a row to open the detail panel">
               <Table
@@ -427,7 +476,9 @@ export default function Home() {
           </Panel>
         </section>
       )}
-    </main>
+        </main>
+      </div>
+    </div>
   );
 }
 
