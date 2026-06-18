@@ -107,12 +107,19 @@ STAFF_ALIASES = {
     "shaiha": "Shaiha",
     "shaikha": "Shaiha",
     "shai": "Shaiha",
+    "shaii": "Shaiha",
     "farhana": "Farhana",
+    "faroo": "Faroo",
+    "farooo": "Faroo",
+    "faroooo": "Faroo",
     "hazum": "Hazum",
+    "nashwa": "Nashwa",
     "nisreen": "Nisreen",
+    "nisry": "Nisreen",
     "nisryn": "Nisreen",
     "nisrin": "Nisreen",
     "isha": "Ishaanee",
+    "ishaa": "Ishaanee",
     "ishaanee": "Ishaanee",
     "ishany": "Ishaanee",
     "ishaanee ": "Ishaanee",
@@ -120,6 +127,15 @@ STAFF_ALIASES = {
     "siman": "Shiman",
     "shiman/siman": "Shiman",
     "rifath": "Rifath",
+}
+
+# Values that show up in name columns but are not real staff names.
+STAFF_JUNK = {
+    "00:00:00",
+    "staff name",
+    "lead staff information",
+    "support staff information",
+    "report was externally reviewed",
 }
 
 
@@ -130,6 +146,8 @@ def staff_name(value):
     parts = re.split(r"/|,|&|\band\b", text, flags=re.I)
     first = parts[0].strip()
     key = first.lower()
+    if key in STAFF_JUNK:
+        return ""
     return STAFF_ALIASES.get(key, first)
 
 
