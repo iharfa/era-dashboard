@@ -90,6 +90,8 @@ users.push({ id: "user-management", name: "ERA Management", email: "management@e
 data.users = users;
 data.staff_profiles = staffProfiles;
 data.lookups.staff = staffNames;
+// Bump the seed version so the app invalidates stale browser caches.
+if (data.meta) data.meta.generated_at = new Date().toISOString().slice(0, 19);
 
 writeFileSync(FILE, JSON.stringify(data, null, 2) + "\n", "utf8");
 console.log("Consolidated staff roster (" + staffNames.length + "):");

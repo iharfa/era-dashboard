@@ -18,6 +18,13 @@ import {
 
 const seedData = seedJson as unknown as AppData;
 
+// Bump when the seed dataset changes so cached localStorage data is replaced
+// instead of shadowing the new seed (e.g. after consolidating staff names).
+const SEED_VERSION = seedData.meta?.generated_at || "1";
+const DATA_KEY = "era-monitoring-dashboard-data";
+const USER_KEY = "era-monitoring-dashboard-user";
+const VERSION_KEY = "era-monitoring-dashboard-seed-version";
+
 const collectionMap: Record<string, keyof AppData> = {
   projects: "projects",
   screening_applications: "screening_applications",
@@ -42,8 +49,17 @@ export default function Home() {
   const [corrections, setCorrections] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("era-monitoring-dashboard-data");
-    const savedUser = window.localStorage.getItem("era-monitoring-dashboard-user");
+    const storedVersion = window.localStorage.getItem(VERSION_KEY);
+    if (storedVersion !== SEED_VERSION) {
+      // Seed changed since this browser last cached it — drop the stale copy.
+      window.localStorage.removeItem(DATA_KEY);
+      window.localStorage.setItem(VERSION_KEY, SEED_VERSION);
+      setData(seedData);
+      setReady(true);
+      return;
+    }
+    const saved = window.localStorage.getItem(DATA_KEY);
+    const savedUser = window.localStorage.getItem(USER_KEY);
     if (saved) {
       try {
         setData(JSON.parse(saved) as AppData);
@@ -57,12 +73,12 @@ export default function Home() {
 
   useEffect(() => {
     if (!ready) return;
-    window.localStorage.setItem("era-monitoring-dashboard-data", JSON.stringify(data));
+    window.localStorage.setItem(DATA_KEY, JSON.stringify(data));
   }, [data, ready]);
 
   useEffect(() => {
     if (!ready) return;
-    window.localStorage.setItem("era-monitoring-dashboard-user", userId);
+    window.localStorage.setItem(USER_KEY, userId);
   }, [userId, ready]);
 
   const fallbackUser: User = {
@@ -171,7 +187,8 @@ export default function Home() {
   }
 
   function resetDemoData() {
-    window.localStorage.removeItem("era-monitoring-dashboard-data");
+    window.localStorage.removeItem(DATA_KEY);
+    window.localStorage.setItem(VERSION_KEY, SEED_VERSION);
     setData(seedData);
   }
 
